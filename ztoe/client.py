@@ -4,7 +4,7 @@ import ztoe.schedule as schedule
 
 class Client:
     DATA_URL = "https://www.ztoe.com.ua/unhooking-search.php"
-    REQUEST_TIMEOUT = 10
+    REQUEST_TIMEOUT = 30
 
     def __init__(self, session: ClientSession, url: str = ""):
         self.DATA_URL = url or self.DATA_URL

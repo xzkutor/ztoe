@@ -11,6 +11,7 @@ async def main():
         schedule = await (await client.get_schedule()).get_queue(1)
 
         for item in schedule:
+            print(f"date={item['date']}")
             print(f"sector={item['sector']} queue={item['queue']} schedule_data={item['data']}")
 
 logging.basicConfig(level=logging.INFO)
