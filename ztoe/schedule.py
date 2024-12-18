@@ -1,6 +1,5 @@
 from bs4 import BeautifulSoup
 import re
-import roman
 import logging
 import functools
 from typing import List, Dict, Any, Optional
@@ -41,6 +40,29 @@ def load_data(func):
 
     return wrapper_checkcache
 
+def roman_to_int(s: str) -> int:
+    """
+    Convert a Roman numeral to an integer.
+
+    Args:
+        s (str): The Roman numeral as a string.
+
+    Returns:
+        int: The integer representation of the Roman numeral.
+    """
+    roman_numerals = {
+        'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000
+    }
+    total = 0
+    prev_value = 0
+    for char in reversed(s):
+        value = roman_numerals[char]
+        if value < prev_value:
+            total -= value
+        else:
+            total += value
+        prev_value = value
+    return total
 
 async def _process_table(table) -> List[Dict[str, Any]]:
     """
@@ -74,8 +96,8 @@ async def _process_table(table) -> List[Dict[str, Any]]:
 
     logger.debug(header_values)
 
-    sector = 1
     queue = 1
+    sub_queue = 1
     time_cell = 0
     table_data = []
 
@@ -93,21 +115,21 @@ async def _process_table(table) -> List[Dict[str, Any]]:
 
             if text or color is None:
                 if text.strip().isdecimal():
-                    sector = int(text)
+                    sub_queue = int(text)
+                    time_cell = 0
                 elif text.strip().isalpha():
                     try:
-                        queue = roman.fromRoman(text.strip())
-                        time_cell = 0
-                    except roman.InvalidRomanNumeralError as e:
+                        queue = roman_to_int(text.strip())
+                    except KeyError as e:
                         logger.error('Error converting Roman numeral', exc_info=e)
                         return []
             else:
                 row_data[time_cell] = {'time': header_values[time_cell], 'electricity': isElectricityPlanned(color)}
-                logger.debug(f"Adding value for sector={sector} queue={queue} time={header_values[time_cell]} electricity={isElectricityPlanned(color)}")
+                logger.debug(f"Adding value for queue={queue} sub_queue={sub_queue} time={header_values[time_cell]} electricity={isElectricityPlanned(color)}")
                 time_cell += 1
 
-        logger.debug(f"Adding data for date={schedule_date} sector={sector} and queue={queue}, data={row_data}")
-        table_data.append({"date": schedule_date, "sector": sector, "queue": queue, "data": row_data})
+        logger.debug(f"Adding data for date={schedule_date} sector={queue} and sub_queue={sub_queue}, data={row_data}")
+        table_data.append({"date": schedule_date, "queue": queue, "sub_queue": sub_queue, "data": row_data})
 
     return table_data
 
@@ -142,7 +164,7 @@ class Schedule:
         if self._html is None:
             return []
 
-        tables = self._html.find_all('table', attrs={'style': "border-collapse: collapse;table-layout:fixed;width:810pt"})
+        tables = self._html.find_all('table', attrs={'style': "border-collapse: collapse;table-layout:fixed;width:1300pt"})
         if not tables:
             logger.error("No tables found in the HTML")
             return []

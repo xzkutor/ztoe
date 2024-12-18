@@ -8,11 +8,11 @@ logger = logging.getLogger(__name__)
 async def main():
     async with aiohttp.ClientSession() as session:
         client = Client(session)
-        schedule = await (await client.get_schedule()).get_queue(1)
+        schedule = await (await client.get_schedule()).get_all()
 
         for item in schedule:
-            print(f"date={item['date']}")
-            print(f"sector={item['sector']} queue={item['queue']} schedule_data={item['data']}")
+            #print(f"date={item['date']}")
+            print(f"queue={item['queue']} sub_queue={item['sub_queue']} schedule_data={item['data']}")
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 asyncio.run(main())
